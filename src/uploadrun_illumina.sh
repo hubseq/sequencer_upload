@@ -11,7 +11,7 @@ num_files_previous=0
 # loop and run rclone copy until sequencing run is done
 while [ $run_done -le 3 ]
 do
-	rclone copy --max-age 24h --no-traverse $source_folder/ s3:$dest_bucket/test/ -P
+	rclone copy --max-age 24h --no-traverse $source_folder/ s3:$dest_bucket/$2/ -P
 
 	# traverse the files and count # of files. Also look for Complete file. Can traverse 9 layers deep (Illumina goes at least 8 deep)
 	let final_file_found=0
@@ -106,6 +106,10 @@ do
 	# wait before next copy
 	echo $run_done
 	let num_files_previous=$num_files
-	sleep 3
+	sleep 15
 done
+# upload the final checksum file
+checksum_md5=$(find $source_folder -type f ! -name "CHECKSUM.MD5" -exec md5sum {} + | LC_ALL=C sort | md5sum)
+echo $checksum_md5 > $source_folder/CHECKSUM.MD5
+rclone copy --max-age 24h --no-traverse $source_folder/ s3:$dest_bucket/$2/ -P
 echo "upload DONE!"
